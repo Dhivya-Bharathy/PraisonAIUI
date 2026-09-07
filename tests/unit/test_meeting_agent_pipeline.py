@@ -9,6 +9,10 @@ from unittest.mock import patch
 
 import pytest
 
+# The ingest pipeline calls the external PraisonAI-Tools ``meeting_tools`` at
+# runtime; it is not a PraisonAIUI CI dependency, so skip when unavailable.
+pytest.importorskip("praisonai_tools")
+
 _PIPELINE = (
     Path(__file__).resolve().parents[2]
     / "examples"

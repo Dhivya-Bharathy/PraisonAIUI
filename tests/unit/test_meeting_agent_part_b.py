@@ -108,6 +108,7 @@ def test_transcript_webhook_keys_are_unique_per_utterance():
 
 
 def test_upsert_live_transcript_replaces_partial():
+    pytest.importorskip("praisonai_tools")  # external PraisonAI-Tools dep, optional in CI
     processor = _load("part_b_processor2", _ROOT / "integrations" / "recall" / "processor.py")
     with patch("integrations.recall.live.publish_live_chunk") as publish:
         with patch("praisonai_tools.tools.meeting_tools.get_meeting") as get_m:

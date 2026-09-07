@@ -77,6 +77,7 @@ def test_verify_request_rejects_bad_signature():
 
 
 def test_schedule_bot_persists_intent_before_api():
+    pytest.importorskip("praisonai_tools")  # external PraisonAI-Tools dep, optional in CI
     service = _load("recall_service", _ROOT / "integrations" / "recall" / "service.py")
     client = MagicMock()
     client.create_bot.return_value = {"id": "bot-abc"}
