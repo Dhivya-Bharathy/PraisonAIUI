@@ -23,29 +23,34 @@ def _upsert_live_transcript(meeting_id: str, line: str, *, partial: bool = False
     """Merge one live caption line; partial updates replace the last same-speaker line."""
     from praisonai_tools.tools.meeting_tools import get_meeting
     from integrations.recall.live import publish_live_chunk
+    from pipeline import _metadata_lock
 
-    record = get_meeting.__wrapped__(meeting_id)
-    meta = record.get("metadata") or {} if isinstance(record, dict) else {}
-    existing = str(meta.get("transcript") or "")
-    lines = existing.splitlines()
-    prefix = _speaker_prefix(line)
+    # Hold the merge lock across the read too: streaming transcript events are
+    # dispatched one-thread-each, so an unsynchronized read-append-write would
+    # let concurrent captions clobber each other and drop lines.
+    with _metadata_lock:
+        record = get_meeting.__wrapped__(meeting_id)
+        meta = record.get("metadata") or {} if isinstance(record, dict) else {}
+        existing = str(meta.get("transcript") or "")
+        lines = existing.splitlines()
+        prefix = _speaker_prefix(line)
 
-    if lines and lines[-1] == line:
-        full = existing
-    elif partial and lines and prefix and lines[-1].startswith(prefix):
-        lines[-1] = line
-        full = "\n".join(lines)
-    elif not partial and lines and prefix and lines[-1].startswith(prefix):
-        # Final utterance replaces the in-progress partial for this speaker.
-        lines[-1] = line
-        full = "\n".join(lines)
-    else:
-        full = f"{existing}\n{line}".strip() if existing else line
+        if lines and lines[-1] == line:
+            full = existing
+        elif partial and lines and prefix and lines[-1].startswith(prefix):
+            lines[-1] = line
+            full = "\n".join(lines)
+        elif not partial and lines and prefix and lines[-1].startswith(prefix):
+            # Final utterance replaces the in-progress partial for this speaker.
+            lines[-1] = line
+            full = "\n".join(lines)
+        else:
+            full = f"{existing}\n{line}".strip() if existing else line
 
-    _merge_metadata(
-        meeting_id,
-        {"transcript": full, "live_status": "live", "status": "live"},
-    )
+        _merge_metadata(
+            meeting_id,
+            {"transcript": full, "live_status": "live", "status": "live"},
+        )
     publish_live_chunk(meeting_id, line=line, full_text=full, live_status="live")
     return full
 
