@@ -50,11 +50,25 @@ def webhook_event_key(event_type: str, payload: dict[str, Any]) -> str:
     message = payload.get("message") if isinstance(payload.get("message"), dict) else payload
     call = (message or {}).get("call") if isinstance(message, dict) else {}
     call_id = call.get("id") if isinstance(call, dict) else None
-    if event_type == "transcript" and isinstance(message, dict):
-        text = str(message.get("transcript") or "")
-        role = str(message.get("role") or "")
-        kind = str(message.get("transcriptType") or "")
-        return f"{event_type}:{call_id}:{role}:{kind}:{text}"
+    if isinstance(message, dict):
+        # Derive the key from the fields that actually distinguish one event from
+        # the next. A truncated JSON dump is unsafe here: when a large static field
+        # (e.g. ``call``) sorts before the discriminating field, successive events
+        # collapse to the same prefix and later ones get dropped as "duplicates"
+        # (e.g. a status-update stuck on "ringing").
+        if event_type == "transcript":
+            text = str(message.get("transcript") or "")
+            role = str(message.get("role") or "")
+            kind = str(message.get("transcriptType") or "")
+            return f"{event_type}:{call_id}:{role}:{kind}:{text}"
+        if event_type == "status-update":
+            return f"{event_type}:{call_id}:{message.get('status')}"
+        if event_type == "conversation-update":
+            messages = message.get("messages")
+            count = len(messages) if isinstance(messages, list) else 0
+            return f"{event_type}:{call_id}:{count}"
+        if event_type == "end-of-call-report":
+            return f"{event_type}:{call_id}:{message.get('endedReason')}"
     if call_id:
         return f"{event_type}:{call_id}:{json.dumps(message, sort_keys=True)[:200]}"
     return f"{event_type}:{json.dumps(payload, sort_keys=True)[:300]}"

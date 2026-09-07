@@ -152,6 +152,34 @@ def test_transcript_preserves_live_status():
     assert "user: hello there" in record["transcript"]
 
 
+def test_status_updates_are_not_collapsed_by_idempotency_key():
+    """Distinct status transitions must each be applied, not dropped as duplicates.
+
+    A large static field (``call``) sorts before ``status``; a truncated JSON key
+    would collapse successive updates to the same prefix and freeze the dashboard
+    status on the first value.
+    """
+    with _voice_modules() as imp:
+        processor = imp("integrations.voice.processor")
+        config = imp("integrations.voice.config")
+        store = imp("integrations.voice.store")
+        settings = config.load_voice_settings()
+        big_call = {
+            "id": "call-cascade",
+            "orgId": "org-" * 40,
+            "assistantId": "asst-" * 40,
+            "customer": {"number": "+15551234567"},
+        }
+
+        def status_event(status):
+            return {"message": {"call": big_call, "status": status, "type": "status-update"}}
+
+        for status in ("ringing", "in-progress", "ended"):
+            processor.process_voice_webhook("status-update", status_event(status), settings=settings)
+        record = store.VoiceCallStore.get_call("call-cascade")
+    assert record["status"] == "ended"
+
+
 def test_verify_secret_header():
     with _voice_modules() as imp:
         verify = imp("integrations.voice.verify")
