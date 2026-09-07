@@ -32,7 +32,7 @@ def recall_env(monkeypatch, tmp_path):
     monkeypatch.setenv("RECALL_REGION", "eu-central-1")
     monkeypatch.setenv("RECALL_API_KEY", "test-recall-key")
     monkeypatch.setenv("RECALL_WEBHOOK_VERIFICATION_SECRET", _SECRET)
-    monkeypatch.setenv("RECALL_WORKSPACE_ID", "33a035c7-03c1-4ec9-b752-18cdfbbefc42")
+    monkeypatch.setenv("RECALL_WORKSPACE_ID", "test-workspace")
     monkeypatch.setenv("PUBLIC_API_BASE_URL", "https://dev.example.test")
     monkeypatch.setenv("PRAISONAI_MEETINGS_DIR", str(tmp_path))
     monkeypatch.setenv("PRAISONAI_MEETINGS_DB", str(tmp_path / "meetings.db"))
