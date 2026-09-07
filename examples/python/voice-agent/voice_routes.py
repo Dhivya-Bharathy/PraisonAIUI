@@ -16,6 +16,10 @@ from starlette.responses import JSONResponse, PlainTextResponse, Response
 
 logger = logging.getLogger(__name__)
 
+# Hold strong references to background tasks so the event loop (which only keeps
+# weak references) cannot garbage-collect them mid-flight and drop a webhook event.
+_background_tasks: set[asyncio.Task] = set()
+
 
 async def api_voice_config_status(_request: Request) -> JSONResponse:
     try:
@@ -101,5 +105,9 @@ async def webhook_voice(request: Request) -> Response:
         result = await asyncio.to_thread(process_voice_webhook, event_type, payload, settings=settings)
         return JSONResponse(result or {})
 
-    asyncio.create_task(asyncio.to_thread(process_voice_webhook, event_type, payload, settings=settings))
+    task = asyncio.create_task(
+        asyncio.to_thread(process_voice_webhook, event_type, payload, settings=settings)
+    )
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
     return PlainTextResponse("ok", status_code=200)
