@@ -122,6 +122,36 @@ def test_transcript_appends_final_lines():
     assert "user: I need the time" in record["transcript"]
 
 
+def test_transcript_preserves_live_status():
+    """A transcript/conversation event must not reset an in-progress call to 'unknown'."""
+    with _voice_modules() as imp:
+        processor = imp("integrations.voice.processor")
+        config = imp("integrations.voice.config")
+        store = imp("integrations.voice.store")
+        settings = config.load_voice_settings()
+        processor.process_voice_webhook(
+            "status-update",
+            {"message": {"type": "status-update", "call": {"id": "call-s1"}, "status": "in-progress"}},
+            settings=settings,
+        )
+        processor.process_voice_webhook(
+            "transcript",
+            {
+                "message": {
+                    "type": "transcript",
+                    "call": {"id": "call-s1"},
+                    "role": "user",
+                    "transcriptType": "final",
+                    "transcript": "hello there",
+                }
+            },
+            settings=settings,
+        )
+        record = store.VoiceCallStore.get_call("call-s1")
+    assert record["status"] == "in-progress"
+    assert "user: hello there" in record["transcript"]
+
+
 def test_verify_secret_header():
     with _voice_modules() as imp:
         verify = imp("integrations.voice.verify")

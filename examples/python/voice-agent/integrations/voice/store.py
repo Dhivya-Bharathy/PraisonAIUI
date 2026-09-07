@@ -84,7 +84,7 @@ class VoiceCallStore:
     def upsert_call(
         call_id: str,
         *,
-        status: str = "unknown",
+        status: str | None = None,
         customer_number: str | None = None,
         transcript: str | None = None,
         summary: str | None = None,
@@ -93,13 +93,17 @@ class VoiceCallStore:
         now = datetime.now(timezone.utc).isoformat()
         with closing(_connect()) as conn, conn:
             row = conn.execute(
-                "SELECT transcript, summary, metadata_json, customer_number FROM voice_calls WHERE call_id = ?",
+                "SELECT transcript, summary, metadata_json, customer_number, status FROM voice_calls WHERE call_id = ?",
                 (call_id,),
             ).fetchone()
             existing_transcript = row[0] if row else ""
             existing_summary = row[1] if row else ""
             existing_meta = json.loads(row[2]) if row and row[2] else {}
             existing_number = row[3] if row else None
+            existing_status = row[4] if row else None
+            # Preserve prior status when the caller doesn't supply one (e.g. transcript
+            # / conversation-update events) so partial updates don't clobber live state.
+            final_status = status if status is not None else (existing_status or "unknown")
             merged_meta = {**existing_meta, **(metadata or {})}
             conn.execute(
                 """
@@ -116,7 +120,7 @@ class VoiceCallStore:
                 """,
                 (
                     call_id,
-                    status,
+                    final_status,
                     customer_number or existing_number,
                     transcript if transcript is not None else existing_transcript,
                     summary if summary is not None else existing_summary,
