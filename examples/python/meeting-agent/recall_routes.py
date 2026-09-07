@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 _calendar_regional_uri: str | None = None
 
+# Keep strong references to fire-and-forget webhook tasks so the event loop does
+# not garbage-collect them mid-execution (asyncio only holds weak references).
+_background_tasks: set[asyncio.Task[Any]] = set()
+
 
 def set_calendar_regional_callback_uri(uri: str | None) -> None:
     global _calendar_regional_uri
@@ -103,9 +107,11 @@ async def webhook_recall(request: Request) -> Response:
         return JSONResponse({"error": "invalid JSON"}, status_code=400)
 
     event_type = str(payload.get("event") or payload.get("type") or "unknown")
-    asyncio.create_task(
+    task = asyncio.create_task(
         asyncio.to_thread(process_recall_webhook, event_type, payload, settings=settings)
     )
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
     return PlainTextResponse("ok", status_code=200)
 
 
