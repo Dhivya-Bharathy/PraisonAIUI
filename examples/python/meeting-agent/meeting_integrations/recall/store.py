@@ -90,24 +90,24 @@ class RecallStore:
 
     @staticmethod
     def mark_event_processed(event_key: str, event_type: str) -> bool:
-        """Return False if this event was already processed."""
+        """Claim an event for processing; return False if already processed.
+
+        Uses an atomic ``INSERT OR IGNORE`` so concurrent duplicate webhook
+        deliveries (Svix retries/fan-out) cannot both pass the check — the
+        second insert is ignored and reports zero changed rows.
+        """
         from datetime import datetime, timezone
 
         with closing(_connect()) as conn, conn:
-            row = conn.execute(
-                "SELECT 1 FROM recall_webhook_events WHERE event_key = ?",
-                (event_key,),
-            ).fetchone()
-            if row:
-                return False
-            conn.execute(
+            cursor = conn.execute(
                 """
-                INSERT INTO recall_webhook_events (event_key, event_type, processed_at)
+                INSERT OR IGNORE INTO recall_webhook_events
+                    (event_key, event_type, processed_at)
                 VALUES (?, ?, ?)
                 """,
                 (event_key, event_type, datetime.now(timezone.utc).isoformat()),
             )
-        return True
+            return cursor.rowcount > 0
 
     @staticmethod
     def save_calendar_setup(setup_id: str, platform: str, state: dict[str, Any]) -> None:
