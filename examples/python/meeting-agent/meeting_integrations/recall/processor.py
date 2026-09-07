@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from integrations.recall.client import RecallAPIError, RecallClient
-from integrations.recall.config import RecallSettings
-from integrations.recall.store import RecallStore, webhook_event_key
-from integrations.recall.transcript import transcript_download_to_text
+from meeting_integrations.recall.client import RecallAPIError, RecallClient
+from meeting_integrations.recall.config import RecallSettings
+from meeting_integrations.recall.store import RecallStore, webhook_event_key
+from meeting_integrations.recall.transcript import transcript_download_to_text
 
 logger = logging.getLogger(__name__)
 

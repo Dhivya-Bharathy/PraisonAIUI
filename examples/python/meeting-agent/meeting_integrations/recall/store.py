@@ -72,19 +72,19 @@ class RecallStore:
 
     @staticmethod
     def extract_bot_id(payload: dict[str, Any]) -> str | None:
-        from integrations.recall.client import RecallClient
+        from meeting_integrations.recall.client import RecallClient
 
         return RecallClient.extract_bot_id(payload)
 
     @staticmethod
     def extract_recording_id(payload: dict[str, Any]) -> str | None:
-        from integrations.recall.client import RecallClient
+        from meeting_integrations.recall.client import RecallClient
 
         return RecallClient.extract_recording_id(payload)
 
     @staticmethod
     def extract_transcript_id(payload: dict[str, Any]) -> str | None:
-        from integrations.recall.client import RecallClient
+        from meeting_integrations.recall.client import RecallClient
 
         return RecallClient.extract_transcript_id(payload)
 

@@ -97,7 +97,7 @@ _agent: Any | None = None
 def _recall_schedule_tool():
     from praisonai_tools.tools.decorator import tool
 
-    from integrations.recall.service import schedule_recall_bot as _schedule
+    from meeting_integrations.recall.service import schedule_recall_bot as _schedule
 
     @tool
     def schedule_recall_bot(meeting_url: str, title: str = "") -> dict:
@@ -175,8 +175,8 @@ def _sync_stale_recall_status(record: dict[str, Any]) -> dict[str, Any]:
     if not os.getenv("RECALL_API_KEY"):
         return record
     try:
-        from integrations.recall.client import RecallClient
-        from integrations.recall.config import load_recall_settings
+        from meeting_integrations.recall.client import RecallClient
+        from meeting_integrations.recall.config import load_recall_settings
         from pipeline import merge_meeting_metadata
 
         bot = RecallClient(load_recall_settings()).get_bot(str(bot_id))

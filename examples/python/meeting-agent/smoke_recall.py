@@ -43,8 +43,8 @@ def run_smoke() -> None:
     os.environ.setdefault("PUBLIC_API_BASE_URL", "https://smoke.example.test")
 
     import app as meeting_app  # noqa: WPS433
-    from integrations.recall.config import load_recall_settings
-    from integrations.recall.verify import verify_request_from_recall
+    from meeting_integrations.recall.config import load_recall_settings
+    from meeting_integrations.recall.verify import verify_request_from_recall
 
     settings = load_recall_settings()
     assert settings.api_key == "smoke-test-key"

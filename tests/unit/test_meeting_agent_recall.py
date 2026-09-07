@@ -40,7 +40,7 @@ def recall_env(monkeypatch, tmp_path):
 
 
 def test_verify_request_accepts_valid_signature():
-    verify_mod = _load("recall_verify", _ROOT / "integrations" / "recall" / "verify.py")
+    verify_mod = _load("recall_verify", _ROOT / "meeting_integrations" / "recall" / "verify.py")
     import hmac
     import hashlib
 
@@ -63,7 +63,7 @@ def test_verify_request_accepts_valid_signature():
 
 
 def test_verify_request_rejects_bad_signature():
-    verify_mod = _load("recall_verify", _ROOT / "integrations" / "recall" / "verify.py")
+    verify_mod = _load("recall_verify", _ROOT / "meeting_integrations" / "recall" / "verify.py")
     with pytest.raises(verify_mod.VerificationError):
         verify_mod.verify_request_from_recall(
             secret=_SECRET,
@@ -77,7 +77,10 @@ def test_verify_request_rejects_bad_signature():
 
 
 def test_schedule_bot_persists_intent_before_api():
-    service = _load("recall_service", _ROOT / "integrations" / "recall" / "service.py")
+    # schedule_recall_bot persists meeting intent via PraisonAI-Tools meeting
+    # tools; skip when that external package is not installed here.
+    pytest.importorskip("praisonai_tools")
+    service = _load("recall_service", _ROOT / "meeting_integrations" / "recall" / "service.py")
     client = MagicMock()
     client.create_bot.return_value = {"id": "bot-abc"}
 
@@ -103,7 +106,7 @@ def test_webhook_rejects_invalid_signature():
 
 def test_webhook_accepts_valid_signature_and_queues():
     example = _load("meeting_agent_recall_app2", _ROOT / "app.py")
-    verify_mod = _load("recall_verify2", _ROOT / "integrations" / "recall" / "verify.py")
+    verify_mod = _load("recall_verify2", _ROOT / "meeting_integrations" / "recall" / "verify.py")
     import hmac
     import hashlib
 
@@ -135,7 +138,7 @@ def test_webhook_accepts_valid_signature_and_queues():
 
 
 def test_transcript_download_to_text():
-    tx = _load("recall_transcript", _ROOT / "integrations" / "recall" / "transcript.py")
+    tx = _load("recall_transcript", _ROOT / "meeting_integrations" / "recall" / "transcript.py")
     data = [
         {"speaker": "Alice", "words": [{"text": "Hello"}, {"text": "team"}]},
         {"speaker": "Bob", "text": "Hi there"},

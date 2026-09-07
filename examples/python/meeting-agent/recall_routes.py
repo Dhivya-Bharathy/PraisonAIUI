@@ -11,12 +11,12 @@ from typing import Any
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 
-from integrations.recall.calendar import forward_calendar_callback
-from integrations.recall.config import RecallConfigError, load_recall_settings
-from integrations.recall.processor import process_recall_webhook
-from integrations.recall.service import cancel_recall_bot, schedule_recall_bot
-from integrations.recall.store import RecallStore
-from integrations.recall.verify import VerificationError, verify_request_from_recall
+from meeting_integrations.recall.calendar import forward_calendar_callback
+from meeting_integrations.recall.config import RecallConfigError, load_recall_settings
+from meeting_integrations.recall.processor import process_recall_webhook
+from meeting_integrations.recall.service import cancel_recall_bot, schedule_recall_bot
+from meeting_integrations.recall.store import RecallStore
+from meeting_integrations.recall.verify import VerificationError, verify_request_from_recall
 
 logger = logging.getLogger(__name__)
 
