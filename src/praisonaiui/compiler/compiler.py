@@ -718,10 +718,10 @@ class Compiler:
     def _format_lastmod(path: Path | None) -> str | None:
         if not path or not path.is_file():
             return None
-        from datetime import UTC, datetime
+        from datetime import datetime, timezone
 
         mtime = path.stat().st_mtime
-        return datetime.fromtimestamp(mtime, tz=UTC).strftime("%Y-%m-%d")
+        return datetime.fromtimestamp(mtime, tz=timezone.utc).strftime("%Y-%m-%d")
 
     def _resolve_md_source(self, route_path: str) -> Path | None:
         """Map a docs route path to its source markdown file."""
