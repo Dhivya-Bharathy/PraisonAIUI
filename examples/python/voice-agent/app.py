@@ -20,10 +20,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import praisonaiui as aiui
-from praisonaiui.server import create_app
 from starlette.routing import Route
-
 from voice_routes import (
     api_voice_call_detail,
     api_voice_config_status,
@@ -31,6 +28,9 @@ from voice_routes import (
     api_voice_list_calls,
     webhook_voice,
 )
+
+import praisonaiui as aiui
+from praisonaiui.server import create_app
 
 _EXAMPLE_DIR = Path(__file__).resolve().parent
 if str(_EXAMPLE_DIR) not in sys.path:
@@ -63,9 +63,8 @@ def get_agent():
     global _agent
     if _agent is not None:
         return _agent
-    from praisonaiagents import Agent
-
     from integrations.voice.tools import echo_message, get_current_time, register_tool
+    from praisonaiagents import Agent
 
     register_tool("get_current_time", get_current_time)
     register_tool("echo_message", echo_message)

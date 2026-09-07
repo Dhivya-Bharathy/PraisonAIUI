@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import httpx
-
 from integrations.voice.config import VoiceSettings
 
 logger = logging.getLogger(__name__)
@@ -39,6 +37,8 @@ class VoiceClient:
         *,
         json_body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        import httpx  # lazy: optional dependency for the example (pip install httpx)
+
         url = f"{self._settings.api_base.rstrip('/')}{path}"
         with httpx.Client(timeout=30.0) as client:
             response = client.request(method, url, headers=self._headers(), json=json_body)
