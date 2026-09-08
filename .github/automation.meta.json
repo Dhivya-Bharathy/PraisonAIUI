@@ -1,9 +1,9 @@
 {
   "templateRepo": "MervinPraison/github-automation-template",
   "stack": "claude",
-  "profile": "docs",
+  "profile": "sdk",
   "mode": "hub",
-  "hubRef": "v1.1.1",
-  "templateVersion": "1.1.1",
-  "installedAt": "2026-09-02T12:07:52Z"
+  "hubRef": "v1.1.6",
+  "templateVersion": "1.1.6",
+  "installedAt": "2026-09-07T10:02:11Z"
 }
