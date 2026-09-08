@@ -28,6 +28,17 @@ logger = logging.getLogger(__name__)
 
 _calendar_regional_uri: str | None = None
 
+# asyncio keeps only weak references to tasks, so a bare create_task() can be
+# garbage-collected mid-flight and silently drop a webhook event. Hold a strong
+# reference until each background task finishes.
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _dispatch_background(coro) -> None:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+
 
 def set_calendar_regional_callback_uri(uri: str | None) -> None:
     global _calendar_regional_uri
@@ -110,7 +121,7 @@ async def webhook_recall(request: Request) -> Response:
 
     event_type = str(payload.get("event") or payload.get("type") or "unknown")
     if event_type.startswith("calendar."):
-        asyncio.create_task(
+        _dispatch_background(
             asyncio.to_thread(
                 process_calendar_webhook,
                 event_type,
@@ -120,7 +131,7 @@ async def webhook_recall(request: Request) -> Response:
         )
         return PlainTextResponse("ok", status_code=200)
 
-    asyncio.create_task(
+    _dispatch_background(
         asyncio.to_thread(process_recall_webhook, event_type, payload, settings=settings)
     )
     return PlainTextResponse("ok", status_code=200)
