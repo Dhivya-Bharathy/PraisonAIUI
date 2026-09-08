@@ -55,6 +55,11 @@ class TestHealthEndpoint:
         """Test liveness endpoint returns quickly."""
         import time
 
+        # Warm up once so the timed call measures steady-state latency rather
+        # than one-time TestClient/route initialization (which can exceed the
+        # threshold on slow CI runners and cause flaky failures).
+        client.get("/health/live")
+
         start = time.time()
         response = client.get("/health/live")
         duration = time.time() - start

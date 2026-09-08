@@ -77,9 +77,7 @@ def test_verify_request_rejects_bad_signature():
 
 
 def test_schedule_bot_persists_intent_before_api():
-    # schedule_recall_bot persists meeting intent via PraisonAI-Tools meeting
-    # tools; skip when that external package is not installed here.
-    pytest.importorskip("praisonai_tools")
+    pytest.importorskip("praisonai_tools")  # external PraisonAI-Tools dep, optional in CI
     service = _load("recall_service", _ROOT / "meeting_integrations" / "recall" / "service.py")
     client = MagicMock()
     client.create_bot.return_value = {"id": "bot-abc"}

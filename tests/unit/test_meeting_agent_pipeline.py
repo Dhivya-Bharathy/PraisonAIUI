@@ -9,8 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-# Meeting tools live in the external PraisonAI-Tools package (agent-callable
-# integrations layer). Skip when it is not installed in this environment.
+# Meeting tools live in the external PraisonAI-Tools package; skip when unavailable in CI.
 pytest.importorskip("praisonai_tools")
 
 _PIPELINE = (

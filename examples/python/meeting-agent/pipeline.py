@@ -10,11 +10,18 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 from contextlib import closing
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# Serializes metadata read-modify-write. Webhooks are dispatched one-thread-each
+# (asyncio.to_thread), so concurrent transcript events would otherwise clobber
+# each other's appends. Reentrant so callers can hold it across their own
+# read + merge (see processor._upsert_live_transcript).
+_metadata_lock = threading.RLock()
 
 AUDIO_SUFFIXES = {".mp3", ".mp4", ".m4a", ".wav", ".webm", ".ogg", ".mpeg", ".mpga"}
 _MEETING_ID_RE = re.compile(
@@ -27,19 +34,20 @@ def merge_meeting_metadata(meeting_id: str, patch: dict[str, Any]) -> dict[str, 
     """Merge keys into a meeting's metadata blob."""
     from praisonai_tools.tools import meeting_tools as mt
 
-    record = mt.get_meeting.__wrapped__(meeting_id)
-    if "error" in record:
-        return record
-    meta = {**(record.get("metadata") or {}), **patch}
-    try:
-        with closing(mt._connect()) as conn, conn:
-            conn.execute(
-                "UPDATE meetings SET metadata = ? WHERE meeting_id = ?",
-                (json.dumps(meta, sort_keys=True), meeting_id),
-            )
-    except Exception as exc:  # noqa: BLE001
-        logger.error("merge_meeting_metadata failed: %s", exc)
-        return {"error": str(exc)}
+    with _metadata_lock:
+        record = mt.get_meeting.__wrapped__(meeting_id)
+        if "error" in record:
+            return record
+        meta = {**(record.get("metadata") or {}), **patch}
+        try:
+            with closing(mt._connect()) as conn, conn:
+                conn.execute(
+                    "UPDATE meetings SET metadata = ? WHERE meeting_id = ?",
+                    (json.dumps(meta, sort_keys=True), meeting_id),
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("merge_meeting_metadata failed: %s", exc)
+            return {"error": str(exc)}
     return {"meeting_id": meeting_id, "metadata": meta}
 
 
