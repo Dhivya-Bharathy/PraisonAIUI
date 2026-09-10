@@ -372,7 +372,7 @@ class MCPClientManager:
                 server.status = MCPStatus.ERROR
                 server.last_error = "Connection failed"
 
-        except TimeoutError:
+        except asyncio.TimeoutError:
             logger.error("Timed out connecting MCP server %s", name)
             server.status = MCPStatus.ERROR
             server.last_error = "Connection timed out after 120s (check npx/Node and server args)"
