@@ -117,7 +117,12 @@ class StdioMCPClient:
 
     async def connect(self) -> bool:
         """Connect via stdio subprocess using official MCP SDK."""
+        # Store the stack on self before entering contexts so that a caller
+        # cancellation (e.g. asyncio.wait_for timeout, which raises the
+        # BaseException CancelledError past the except below) can still find
+        # and close the partially-entered stack via disconnect().
         exit_stack = contextlib.AsyncExitStack()
+        self._exit_stack = exit_stack
         try:
             server_params = StdioServerParameters(command=self.command, args=self.args)
             read_stream, write_stream = await exit_stack.enter_async_context(
@@ -127,7 +132,6 @@ class StdioMCPClient:
                 ClientSession(read_stream, write_stream)
             )
             await self.session.initialize()
-            self._exit_stack = exit_stack
 
             self._connected = True
             logger.info(f"Connected to MCP stdio server: {self.command}")
@@ -136,6 +140,7 @@ class StdioMCPClient:
         except Exception as e:
             logger.error(f"Failed to connect to MCP stdio server: {e}")
             await exit_stack.aclose()
+            self._exit_stack = None
             self._connected = False
             self.session = None
             return False
@@ -206,7 +211,11 @@ class SSEMCPClient:
 
     async def connect(self) -> bool:
         """Connect via SSE using official MCP SDK."""
+        # Store the stack on self before entering contexts so a caller
+        # cancellation (e.g. asyncio.wait_for timeout) can still close the
+        # partially-entered stack via disconnect(). See StdioMCPClient.connect.
         exit_stack = contextlib.AsyncExitStack()
+        self._exit_stack = exit_stack
         try:
             read_stream, write_stream = await exit_stack.enter_async_context(
                 sse_client(self.url, headers=self.headers)
@@ -215,7 +224,6 @@ class SSEMCPClient:
                 ClientSession(read_stream, write_stream)
             )
             await self.session.initialize()
-            self._exit_stack = exit_stack
 
             self._connected = True
             logger.info(f"Connected to MCP SSE server at {self.url}")
@@ -224,6 +232,7 @@ class SSEMCPClient:
         except Exception as e:
             logger.error(f"Failed to connect to MCP SSE server: {e}")
             await exit_stack.aclose()
+            self._exit_stack = None
             self._connected = False
             self.session = None
             return False
